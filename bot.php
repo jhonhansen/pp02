@@ -28,11 +28,12 @@ function warna($text,$warna){
         }
         return $text;
 }
-function usd_to_twd($cookie,$csrf){
+function usd_to_twd($cookie,$csrf,$user){
 	$arr = array("\r","	");
 	$url = "https://www.paypal.com/myaccount/money/api/currencies/transfer";
 	$h = explode("\n",str_replace($arr,"","Cookie: $cookie
-	Content-Type: application/json"));
+	Content-Type: application/json
+	user-agent: $user"));
 	$body = "{\"sourceCurrency\":\"USD\",\"sourceAmount\":0.02,\"targetCurrency\":\"TWD\",\"_csrf\":\"$csrf\"}";
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
@@ -44,12 +45,13 @@ function usd_to_twd($cookie,$csrf){
 	curl_close($ch);
 	return json_decode($x,true);
 }
-function twd_to_usd($cookie,$csrf){
+function twd_to_usd($cookie,$csrf,$user){
 	$arr = array("\r","	");
 	$url = "https://www.paypal.com/myaccount/money/api/currencies/transfer";
 	$h = explode("\n",str_replace($arr,"","Cookie: $cookie
-	Content-Type: application/json"));
-	$body = "{\"sourceCurrency\":\"TWD\",\"sourceAmount\":1,\"targetCurrency\":\"JPY\",\"_csrf\":\"$csrf\"}";
+	Content-Type: application/json
+	user-agent: $user"));
+	$body = "{\"sourceCurrency\":\"TWD\",\"sourceAmount\":1,\"targetCurrency\":\"USD\",\"_csrf\":\"$csrf\"}";
 	$ch = curl_init();
 	curl_setopt($ch, CURLOPT_URL, $url);
 	curl_setopt($ch, CURLOPT_HTTPHEADER, $h);
@@ -67,8 +69,9 @@ $loop = trim(fgets(STDIN));
 $file = file_get_contents("cookie.txt");
 $cookie = $file;
 $csrf = file_get_contents("csrf.txt");
+$user = file_get_contents("user-agent.txt");
 for ($x = 0; $x < $loop; $x++) {
-	$usd_to_twd =  usd_to_twd($cookie,$csrf);
+	$usd_to_twd =  usd_to_twd($cookie,$csrf,$user);
 	$output_send_usd = json_encode($usd_to_twd);
 	$amount = getStr($output_send_usd ,'"value":"','"');
 	if(strpos($output_send_usd,"null")==true){
@@ -79,7 +82,7 @@ for ($x = 0; $x < $loop; $x++) {
 				        echo date('d-m-Y H:i:s ').$text2."\n";
         }
   sleep(1);
-	$twd_to_usd =  twd_to_usd($cookie,$csrf);
+	$twd_to_usd =  twd_to_usd($cookie,$csrf,$user);
 	$output_send_twd = json_encode($twd_to_usd);
 	$amount = getStr($output_send_twd,'"value":"','"');
 	if(strpos($output_send_twd,"null")==true){
@@ -89,5 +92,5 @@ for ($x = 0; $x < $loop; $x++) {
                  $text4 = "Gagal Convert";
 				        echo date('d-m-Y H:i:s ').$text4."\n";
         }
-  sleep(1)
+  sleep(1);
 }
